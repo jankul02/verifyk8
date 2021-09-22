@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx0
+  labels:
+    app: nginx0
+spec:
+  serviceName: nginx
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx0
+  template:
+    metadata:
+      labels:
+        app: nginx0
+        role: frontend
+    spec:
+      containers:
+      - name: nginx0
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80        
+        env:
+        - name: HEE
+          value: "Hello from the environment"
+        - name: HI
+          value: "Such a sweet sorrow"
