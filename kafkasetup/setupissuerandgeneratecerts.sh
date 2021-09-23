@@ -14,135 +14,69 @@ else
 kpswd=dGFwb3dhMDEK
 echo kpswd standard
 fi
-printf "" > cluster.issuer.yaml
 printf "" > keystore.secrets.yaml
-printf "" > certificates.yaml
-
-
-
-# bootstrap the issuer
-cat << EOFISSUER >> cluster.issuer.yaml 
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: dataproxy-selfsigned-issuer
-spec:
-  selfSigned: {}
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: dataproxy-selfsigned-ca
-  namespace: ${namespace}
-spec:
-  isCA: true
-  commonName: dataproxy-selfsigned-ca
-  secretName: dataproxy-root-secret
-  privateKey:
-    algorithm: ECDSA
-    size: 256
-  issuerRef:
-    name: dataproxy-selfsigned-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
----
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: dataproxy-ca-issuer
-  namespace: ${namespace}
-spec:
-  ca:
-    secretName: dataproxy-root-secret
-EOFISSUER
+printf "" > keystores.yaml
 
 
 
 
-for KEYST in zk-0 zk-1 zk-2 kafka-0 kafka-1 kafka-2 kafka-client-0 zk-client-0
+openssl req -new -x509 -keyout ca-key -out ca-cert -days 365 -passin pass:test1234 -passout pass:test1234 -subj "/CN=<YOUR_KAFKA_DOMAIN_HERE>/OU=DevOps/O=AbarCloud/L=FA/ST=Tehran/C=Iran"
+
+
+
+instances="zk-0 zk-1 zk-2 kafka-0 kafka-1 kafka-2 kafka-client-0 zk-client-0"
+
+for hostname in $instances
 do
-cat << EOF >>keystore.secrets.yaml
+keytool -keystore server.keystore.jks -alias localhost -validity {validity} -genkey -keyalg RSA -ext SAN=DNS:{FQDN}
+keytool -keystore kafka.server.keystore.jks -alias localhost -keyalg RSA -validity {validity} -genkey -storepass {keystore-pass} -keypass {key-pass} -dname {distinguished-name} -ext SAN=DNS:{hostname}
+
+#  per instance: generate a self-signed certificate and store it together with the private key in keystore.jks. 
+keytool -genkeypair -alias ${hostname} -keyalg RSA -keysize 2048 -dname "cn=${hostname}" -keypass password -keystore keystore.jks.${hostname} -storepass $kpswd -ext san=dns:${hostname}.zk-hs.${namespace}.svc.cluster.local
+
+keytool -exportcert -alias ${hostname} -keystore keystore.jks.${hostname} -file ${hostname}.cer -rfc
+
+keytool -importcert -alias ${hostname} -file ${hostname}.cer -keystore truststore.jks.${hostname} -storepass password
+
+
+done
+
+
+
+
+for hostname in $instances
+do
+for otherinstance in $instances
+do
+keytool -importcert -alias ${otherinstance} -file ${otherinstance}.cer -keystore truststore.jks.${hostname} -storepass password
+done
+done
+
+printf "" > keystores.base64.secret.yaml
+for hostname in $instances
+do
+cat server.keystore.${hostname} | base64 -w0 > server.keystore.${hostname}.base64  
+cat server.truststore.${hostname} | base64 -w0 > server.truststore.${hostname}.base64  
+cat << EOFKEYSTORE >>keystores.base64.secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: keystore-password-${KEYST}
-  namespace: ${namespace}
-  labels:
-    app: zk
-type: Opaque
+  name: keystore-${hostname}
+  namespace: default
 data:
-  keystorepassword: ${kpswd}
+  keystore.jks: "$(cat server.keystore.${hostname}.base64)"
+  truststore.jks: "$(cat server.keystore.${hostname}.base64)"
 ---
-EOF
-
-cat << EOF0 >>certificates.yaml
-# 1. bootstrap the the issuer
-# 2. create a keystore secret 
-apiVersion: cert-manager.io/v1
-kind: Certificate
+apiVersion: v1
+kind: Secret
 metadata:
-  name: certificate-${KEYST}
-  namespace: ${namespace}
-spec:
-  # Secret names are always required.
-  secretName: secret-${KEYST}
-  keystores:
-    jks:
-      create: true
-      passwordSecretRef:
-        name: keystore-password-${KEYST}
-        key: keystorepassword
-
-
-  # Secret template is optional. If set, these annotations
-  # and labels will be copied to the secret named example-com-tls.
-  secretTemplate:
-    annotations:
-      secret-annotation-1: "happy secret"
-      secret-annotation-2: "kept secretly"
-    labels:
-      kafka: ${KEYST}
-
-  duration: 21600h # 90d
-  renewBefore: 360h # 15d
-  subject:
-    organizations:
-      - dataproxy
-  # The use of the common name field has been deprecated since 2000 and is
-  # discouraged from being used.
-  commonName: dataproxy.com
-  isCA: false
-  privateKey:
-    algorithm: RSA
-    encoding: PKCS1
-    size: 2048
-  usages:
-    - server auth
-    - client auth
-  # At least one of a DNS Name, URI, or IP address is required.
-  dnsNames:
-    - ${KEYST}.default.svc.cluster.local
-    - ${KEYST}.default
-    - ${KEYST}
-    - zk-client.default.svc.cluster.local
-    - zk-client.default
-    - zk-client
-  # uris:
-  #   - spiffe://cluster.local/ns/sandbox/sa/example
-  # ipAddresses:
-  #   - 192.168.0.5
-  # Issuer references are always required.
-  issuerRef:
-    name: dataproxy-ca-issuer
-    # We can reference ClusterIssuers by changing the kind here.
-    # The default value is Issuer (i.e. a locally namespaced Issuer)
-    kind: Issuer
-    # This is optional since cert-manager will default to this value however
-    # if you are using an external issuer, change this to that issuer group.
-    group: cert-manager.io
+  name: keystore-${hostname}
+  namespace: default
+data:
+  keystore.jks: "$(cat server.keystore.${hostname}.base64)"
+  truststore.jks: "$(cat server.keystore.${hostname}.base64)"
 ---
-EOF0
-done
 
-echo run:
-echo "kubectl  apply -f cluster.issuer.yaml &&  kubectl  apply -f keystore.secrets.yaml &&  kubectl  apply -f certificates.yaml"
+EOFKEYSTORE
+rm server.keystore.${hostname} server.keystore.${hostname}.base64 
+done
