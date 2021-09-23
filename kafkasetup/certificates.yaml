@@ -1,0 +1,520 @@
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-zk-0
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-zk-0
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-zk-0
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: zk-0
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - zk-0.default.svc.cluster.local
+    - zk-0.default
+    - zk-0
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-zk-1
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-zk-1
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-zk-1
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: zk-1
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - zk-1.default.svc.cluster.local
+    - zk-1.default
+    - zk-1
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-zk-2
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-zk-2
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-zk-2
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: zk-2
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - zk-2.default.svc.cluster.local
+    - zk-2.default
+    - zk-2
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-kafka-0
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-kafka-0
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-kafka-0
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: kafka-0
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - kafka-0.default.svc.cluster.local
+    - kafka-0.default
+    - kafka-0
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-kafka-1
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-kafka-1
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-kafka-1
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: kafka-1
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - kafka-1.default.svc.cluster.local
+    - kafka-1.default
+    - kafka-1
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-kafka-2
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-kafka-2
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-kafka-2
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: kafka-2
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - kafka-2.default.svc.cluster.local
+    - kafka-2.default
+    - kafka-2
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-kafka-client-0
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-kafka-client-0
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-kafka-client-0
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: kafka-client-0
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - kafka-client-0.default.svc.cluster.local
+    - kafka-client-0.default
+    - kafka-client-0
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---
+# 1. bootstrap the the issuer
+# 2. create a keystore secret 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-zk-client-0
+  namespace: default
+spec:
+  # Secret names are always required.
+  secretName: secret-zk-client-0
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: keystore-password-zk-client-0
+        key: keystorepassword
+
+
+  # Secret template is optional. If set, these annotations
+  # and labels will be copied to the secret named example-com-tls.
+  secretTemplate:
+    annotations:
+      secret-annotation-1: "happy secret"
+      secret-annotation-2: "kept secretly"
+    labels:
+      kafka: zk-client-0
+
+  duration: 21600h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dataproxy
+  # The use of the common name field has been deprecated since 2000 and is
+  # discouraged from being used.
+  commonName: dataproxy.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - zk-client-0.default.svc.cluster.local
+    - zk-client-0.default
+    - zk-client-0
+    - zk-client.default.svc.cluster.local
+    - zk-client.default
+    - zk-client
+  # uris:
+  #   - spiffe://cluster.local/ns/sandbox/sa/example
+  # ipAddresses:
+  #   - 192.168.0.5
+  # Issuer references are always required.
+  issuerRef:
+    name: dataproxy-ca-issuer
+    # We can reference ClusterIssuers by changing the kind here.
+    # The default value is Issuer (i.e. a locally namespaced Issuer)
+    kind: Issuer
+    # This is optional since cert-manager will default to this value however
+    # if you are using an external issuer, change this to that issuer group.
+    group: cert-manager.io
+---

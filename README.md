@@ -43,3 +43,6 @@ spec:
 
 # what about:
 Enable mTLS on Pods with CSI: https://cert-manager.io/docs/usage/csi/
+
+
+keystore-secret-kafka-client-0 keystore-secret-zk-0 keystore-secret-zk-1  keystore-secret-zk-2    keystore-secret-zk-client-0  secret-kafka-0 secret-kafka-1 secret-kafka-2 secret-kafka-client-0 secret-zk-0 secret-zk-1 secret-zk-2 secret-zk-client-0
