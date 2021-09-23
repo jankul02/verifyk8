@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: dataproxy-selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dataproxy-selfsigned-ca
+  namespace: kafka
+spec:
+  isCA: true
+  commonName: dataproxy-selfsigned-ca
+  secretName: dataproxy-root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: dataproxy-selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: dataproxy-ca-issuer
+  namespace: kafka
+spec:
+  ca:
+    secretName: dataproxy-root-secret

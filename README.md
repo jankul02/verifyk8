@@ -25,4 +25,9 @@ sudo rm  /usr/local/bin/kubectl-cert_manager
 
 
 
+# jks cert-manager
+https://cert-manager.io/docs/release-notes/release-notes-1.2/
 
+
+# what about:
+Enable mTLS on Pods with CSI: https://cert-manager.io/docs/usage/csi/
