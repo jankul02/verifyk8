@@ -28,6 +28,18 @@ sudo rm  /usr/local/bin/kubectl-cert_manager
 # jks cert-manager
 https://cert-manager.io/docs/release-notes/release-notes-1.2/
 
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jks-example
+spec:
+  secretName: jks-keystore
+  jks:
+    create: true
+    passwordSecretRef:
+      name: supersecret
+      key: password
+
 
 # what about:
 Enable mTLS on Pods with CSI: https://cert-manager.io/docs/usage/csi/
