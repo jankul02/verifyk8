@@ -6,18 +6,18 @@ set -eux
 
 namespace=${namespace:-"default"}
 
-if [ x${PASSWORD_origin:-""} != x ]
+if [ x${1:-""} != x ]
 then
-PASSWORD=$(printf $PASSWORD_origin  | base64 -w0)
+PASS=$1
 echo kpswd new 
 else
-PASSWORD=dGFwb3dhMDEK
-echo PASSWORD standard
+PASS=$(printf dGFwb3dhMDEK | base64 --decode)
+echo PASS standard
 fi
 
 VALIDITY_IN_DAYS=3650
 TRUSTSTORE_WORKING_DIRECTORY="truststore"
-DEFAULT_TRUSTSTORE_FILENAME="truststore.jks"
+DEFAULT_TRUSTSTORE_FILENAME="truststore.pkcs12"
 CA_CERT_FILE="ca-cert"
 KEYSTORE_SIGN_REQUEST="cert-file"
 KEYSTORE_SIGN_REQUEST_SRL="ca-cert.srl"
@@ -29,7 +29,6 @@ STATE=${STATE:-Bayern}
 OU=${ORGANIZATION_UNIT:-dataproxy}
 CN=dataproxy
 LOCATION=${CITY:-Munich}
-PASS=$PASSWORD
 
 function file_exists_and_exit() {
   echo "'$1' cannot exist. Move or delete it before"
@@ -73,7 +72,7 @@ trust_store_private_key_file=""
   echo "Now the trust store will be generated from the certificate."
   echo
 
-  keytool -keystore $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME \
+  keytool -storetype PKCS12 -keystore  $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME \
     -alias CARoot -import -file $TRUSTSTORE_WORKING_DIRECTORY/ca-cert \
     -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=$CN" -keypass $PASS -storepass $PASS
 
@@ -93,7 +92,7 @@ echo " - trust store private key: $trust_store_private_key_file"
 echo "#############################################################"
 echo "############        generating keystores  ###################"
 echo "#############################################################"
-KEYSTORE_FILENAME="keystore.jks"
+KEYSTORE_FILENAME="keystore.pkcs12"
 
 instances="zk-0 zk-1 zk-2 kafka-0 kafka-1 kafka-2 kafka-client-0 zk-client-0"
 printf "" > keystores.base64.secret.yaml
@@ -117,7 +116,7 @@ echo "           the FQDN. Some operating systems call the CN prompt 'first / la
 # To learn more about CNs and FQDNs, read:
 # https://docs.oracle.com/javase/7/docs/api/javax/net/ssl/X509ExtendedTrustManager.html
 
-keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME \
+keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME \
   -alias localhost -validity $VALIDITY_IN_DAYS -genkey -keyalg RSA \
    -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}" -keypass $PASS -storepass $PASS
 
@@ -130,12 +129,12 @@ echo
 echo "Fetching the certificate from the trust store and storing in $CA_CERT_FILE."
 echo
 
-keytool -keystore $trust_store_file -export -alias CARoot -rfc -file $CA_CERT_FILE -keypass $PASS -storepass $PASS
+keytool -storetype PKCS12  -keystore $trust_store_file -export -alias CARoot -rfc -file $CA_CERT_FILE -keypass $PASS -storepass $PASS
 
 echo
 echo "Now a certificate signing request will be made to the keystore."
 echo
-keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost \
+keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost \
   -certreq -file $KEYSTORE_SIGN_REQUEST -keypass $PASS -storepass $PASS
 
 echo
@@ -149,14 +148,14 @@ openssl x509 -req -CA $CA_CERT_FILE -CAkey $trust_store_private_key_file \
 echo
 echo "Now the CA will be imported into the keystore."
 echo
-keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias CARoot \
+keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias CARoot \
   -import -file $CA_CERT_FILE -keypass $PASS -storepass $PASS -noprompt
 rm $CA_CERT_FILE # delete the trust store cert because it's stored in the trust store.
 
 echo
 echo "Now the keystore's signed certificate will be imported back into the keystore."
 echo
-keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost -import \
+keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost -import \
   -file $KEYSTORE_SIGNED_CERT -keypass $PASS -storepass $PASS
 
 echo
@@ -173,6 +172,7 @@ echo "    into the keystore"
   rm $KEYSTORE_SIGN_REQUEST
   rm $KEYSTORE_SIGNED_CERT
 
+PASSBASE64=$(printf $PASS  | base64 -w0)
 cat << EOFKEYSTORE >>keystores.base64.secret.yaml
 apiVersion: v1
 kind: Secret
@@ -180,8 +180,8 @@ metadata:
   name: keystore-${hostname}
   namespace: ${namespace}
 data:
-  keystore.jks: "$(cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME | base64 -w0 )"
-  truststore.jks: "$(cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME | base64 -w0)"
+  keystore.pkcs12: "$(cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME | base64 -w0 )"
+  truststore.pkcs12: "$(cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME | base64 -w0)"
 ---
 apiVersion: v1
 kind: Secret
@@ -189,8 +189,8 @@ metadata:
   name: keystorepasswd-${hostname}
   namespace: ${namespace}
 data:
-  keystorepassword: "$PASS" 
-  truststorepassword: "$PASS"
+  keystorepassword: ${PASSBASE64} 
+  truststorepassword: ${PASSBASE64}
 ---
 EOFKEYSTORE
  rm -rf $KEYSTORE_WORKING_DIRECTORY

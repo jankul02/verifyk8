@@ -46,3 +46,14 @@ Enable mTLS on Pods with CSI: https://cert-manager.io/docs/usage/csi/
 
 
 keystore-secret-kafka-client-0 keystore-secret-zk-0 keystore-secret-zk-1  keystore-secret-zk-2    keystore-secret-zk-client-0  secret-kafka-0 secret-kafka-1 secret-kafka-2 secret-kafka-client-0 secret-zk-0 secret-zk-1 secret-zk-2 secret-zk-client-0
+
+
+# every broker and/or CLI tool (such as the ZooKeeper security migration tool, ZkSecurityMigrator) must identify itself **using the same Distinguished Name (DN)**
+
+# **client keystore password==key password for ZooKeeper** does not support setting the key password in the ZooKeeper client keystore (broker) to a value different from the keystore password itself
+
+
+# If using mTLS only (without SASL) and specifying zookeeper.set.acl=true  , do not use certificates with CN=hostname where hostname differs based on the location from which the request originates as a means to satisfy hostname verification. If you do, you may find that brokers cannot access ZooKeeper nodes. Note that the full DN is included in the ZooKeeper ACL, and ZooKeeper only authorizes what is in the ACL.
+1. either zookeeper.set.acl=false
+or 
+2. include a subject alternative name (SAN)
