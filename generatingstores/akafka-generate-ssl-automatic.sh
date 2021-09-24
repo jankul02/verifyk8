@@ -2,7 +2,7 @@
 
 
 
-set -eu
+set -eux
 
 namespace=${namespace:-"default"}
 
@@ -90,6 +90,10 @@ echo "Continuing with:"
 echo " - trust store file:        $trust_store_file"
 echo " - trust store private key: $trust_store_private_key_file"
 
+echo "#############################################################"
+echo "############        generating keystores  ###################"
+echo "#############################################################"
+KEYSTORE_FILENAME="keystore.jks"
 
 instances="zk-0 zk-1 zk-2 kafka-0 kafka-1 kafka-2 kafka-client-0 zk-client-0"
 printf "" > keystores.base64.secret.yaml
@@ -97,8 +101,6 @@ for hostname in $instances
 do
 
 KEYSTORE_WORKING_DIRECTORY="keystore-${hostname}"
-KEYSTORE_FILENAME="keystore.jks"
-
 
 
 mkdir $KEYSTORE_WORKING_DIRECTORY
@@ -117,7 +119,7 @@ echo "           the FQDN. Some operating systems call the CN prompt 'first / la
 
 keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME \
   -alias localhost -validity $VALIDITY_IN_DAYS -genkey -keyalg RSA \
-   -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=$CN" -keypass $PASS -storepass $PASS
+   -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}" -keypass $PASS -storepass $PASS
 
 echo
 echo "'$KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME' now contains a key pair and a"
@@ -171,8 +173,6 @@ echo "    into the keystore"
   rm $KEYSTORE_SIGN_REQUEST
   rm $KEYSTORE_SIGNED_CERT
 
-cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME | base64 -w0 > $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME.base64  
-cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME | base64 -w0 > $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME.base64  
 cat << EOFKEYSTORE >>keystores.base64.secret.yaml
 apiVersion: v1
 kind: Secret
@@ -180,19 +180,19 @@ metadata:
   name: keystore-${hostname}
   namespace: ${namespace}
 data:
-  keystore.jks: "$(cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME.base64 )"
-  truststore.jks: "$(cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME.base64)"
+  keystore.jks: "$(cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME | base64 -w0 )"
+  truststore.jks: "$(cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME | base64 -w0)"
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: secret-${hostname}
+  name: keystorepasswd-${hostname}
   namespace: ${namespace}
 data:
   keystorepassword: "$PASS" 
   truststorepassword: "$PASS"
 ---
 EOFKEYSTORE
-rm -rf $KEYSTORE_WORKING_DIRECTORY
+ rm -rf $KEYSTORE_WORKING_DIRECTORY
 done
 rm -rf $TRUSTSTORE_WORKING_DIRECTORY  
