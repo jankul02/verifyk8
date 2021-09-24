@@ -17,7 +17,7 @@ fi
 
 VALIDITY_IN_DAYS=3650
 TRUSTSTORE_WORKING_DIRECTORY="truststore"
-DEFAULT_TRUSTSTORE_FILENAME="truststore.pkcs12"
+DEFAULT_TRUSTSTORE_FILENAME="truststore.jks"
 CA_CERT_FILE="ca-cert"
 KEYSTORE_SIGN_REQUEST="cert-file"
 KEYSTORE_SIGN_REQUEST_SRL="ca-cert.srl"
@@ -52,9 +52,13 @@ trust_store_private_key_file=""
   echo "First, the private key."
   echo
 
+  openssl req -new -x509 -keyout $TRUSTSTORE_WORKING_DIRECTORY/ca-key  -nodes \
+    -subj "/C=$COUNTRY/ST=$STATE/L=$LOCATION/O=$OU/CN=dataproxy" \
+    -out $TRUSTSTORE_WORKING_DIRECTORY/ca-cert -days $VALIDITY_IN_DAYS 
+
   openssl req -new -x509 -keyout $TRUSTSTORE_WORKING_DIRECTORY/ca-key \
     -out $TRUSTSTORE_WORKING_DIRECTORY/ca-cert -days $VALIDITY_IN_DAYS -nodes \
-    -subj "/C=$COUNTRY/ST=$STATE/L=$LOCATION/O=$OU/CN=$CN"
+    -subj "/C=$COUNTRY/ST=$STATE/L=$LOCATION/O=$OU/CN=dataproxy"
 
   trust_store_private_key_file="$TRUSTSTORE_WORKING_DIRECTORY/ca-key"
 
@@ -72,10 +76,13 @@ trust_store_private_key_file=""
   echo "Now the trust store will be generated from the certificate."
   echo
 
-  keytool -storetype PKCS12 -keystore  $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME \
-    -alias CARoot -import -file $TRUSTSTORE_WORKING_DIRECTORY/ca-cert \
-    -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=$CN" -keypass $PASS -storepass $PASS
+  keytool -storetype JKS -keystore $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME -alias CARoot -importcert -file $TRUSTSTORE_WORKING_DIRECTORY/ca-cert  -noprompt -keypass $PASS -storepass $PASS
+  
 
+  # keytool -storetype JKS -keystore  $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME \
+  #   -alias CARoot -import -file $TRUSTSTORE_WORKING_DIRECTORY/ca-cert \
+  #   -noprompt -keypass $PASS -storepass $PASS
+  
   trust_store_file="$TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME"
 
   echo
@@ -92,7 +99,7 @@ echo " - trust store private key: $trust_store_private_key_file"
 echo "#############################################################"
 echo "############        generating keystores  ###################"
 echo "#############################################################"
-KEYSTORE_FILENAME="keystore.pkcs12"
+KEYSTORE_FILENAME="keystore.jks"
 
 instances="zk-0 zk-1 zk-2 kafka-0 kafka-1 kafka-2 kafka-client-0 zk-client-0"
 printf "" > keystores.base64.secret.yaml
@@ -116,9 +123,13 @@ echo "           the FQDN. Some operating systems call the CN prompt 'first / la
 # To learn more about CNs and FQDNs, read:
 # https://docs.oracle.com/javase/7/docs/api/javax/net/ssl/X509ExtendedTrustManager.html
 
-keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME \
-  -alias localhost -validity $VALIDITY_IN_DAYS -genkey -keyalg RSA \
-   -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}" -keypass $PASS -storepass $PASS
+
+keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost -keyalg RSA -validity $VALIDITY_IN_DAYS \
+ -genkey -keypass $PASS -storepass $PASS -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}.zk-hs.default.svc.cluster.local"  -ext SAN=DNS:${hostname}
+
+# keytool -storetype JKS  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME \
+#   -alias localhost -validity $VALIDITY_IN_DAYS -genkey -keyalg RSA \
+#    -noprompt -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}" -keypass $PASS -storepass $PASS
 
 echo
 echo "'$KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME' now contains a key pair and a"
@@ -129,12 +140,12 @@ echo
 echo "Fetching the certificate from the trust store and storing in $CA_CERT_FILE."
 echo
 
-keytool -storetype PKCS12  -keystore $trust_store_file -export -alias CARoot -rfc -file $CA_CERT_FILE -keypass $PASS -storepass $PASS
+keytool -storetype JKS  -keystore $trust_store_file -export -alias CARoot -rfc -file $CA_CERT_FILE -keypass $PASS -storepass $PASS
 
 echo
 echo "Now a certificate signing request will be made to the keystore."
 echo
-keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost \
+keytool -storetype JKS  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost \
   -certreq -file $KEYSTORE_SIGN_REQUEST -keypass $PASS -storepass $PASS
 
 echo
@@ -148,14 +159,14 @@ openssl x509 -req -CA $CA_CERT_FILE -CAkey $trust_store_private_key_file \
 echo
 echo "Now the CA will be imported into the keystore."
 echo
-keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias CARoot \
+keytool -storetype JKS  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias CARoot \
   -import -file $CA_CERT_FILE -keypass $PASS -storepass $PASS -noprompt
 rm $CA_CERT_FILE # delete the trust store cert because it's stored in the trust store.
 
 echo
 echo "Now the keystore's signed certificate will be imported back into the keystore."
 echo
-keytool -storetype PKCS12  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost -import \
+keytool -storetype JKS  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost -import \
   -file $KEYSTORE_SIGNED_CERT -keypass $PASS -storepass $PASS
 
 echo
@@ -180,8 +191,8 @@ metadata:
   name: keystore-${hostname}
   namespace: ${namespace}
 data:
-  keystore.pkcs12: "$(cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME | base64 -w0 )"
-  truststore.pkcs12: "$(cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME | base64 -w0)"
+  keystore.jks: "$(cat $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME | base64 -w0 )"
+  truststore.jks: "$(cat $TRUSTSTORE_WORKING_DIRECTORY/$DEFAULT_TRUSTSTORE_FILENAME | base64 -w0)"
 ---
 apiVersion: v1
 kind: Secret
