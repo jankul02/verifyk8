@@ -19,13 +19,13 @@ echo OK
 for ((instanceidx=0;instanceidx<8;instanceidx++))
 do
 
-keytool -genkeypair -alias zk-${instanceidx}.zk-hs.default.svc.cluster.local -keyalg RSA -keysize 2048 -dname "cn=zk-${instanceidx}.zk-hs.default.svc.cluster.local" -keypass $PASS -keystore keystore.jks.${instanceidx} -storepass $PASS
-keytool -exportcert -alias zk-${instanceidx}.zk-hs.default.svc.cluster.local -keystore keystore.jks.${instanceidx} -file zk-${instanceidx}.cer -rfc -storepass $PASS -keypass $PASS
+keytool -genkeypair -alias zk-${instanceidx}.zk-hs.${namespace}.svc.cluster.local -keyalg RSA -keysize 2048 -dname "cn=zk-${instanceidx}.zk-hs.${namespace}.svc.cluster.local" -keypass $PASS -keystore keystore.jks.${instanceidx} -storepass $PASS
+keytool -exportcert -alias zk-${instanceidx}.zk-hs.${namespace}.svc.cluster.local -keystore keystore.jks.${instanceidx} -file zk-${instanceidx}.cer -rfc -storepass $PASS -keypass $PASS
 done
 
 for ((instanceidx=0;instanceidx<8;instanceidx++))
 do
-keytool -importcert -alias zk-${instanceidx}.zk-hs.default.svc.cluster.local -file zk-${instanceidx}.cer -keystore truststore.jks -storepass $PASS -keypass $PASS  -noprompt
+keytool -importcert -alias zk-${instanceidx}.zk-hs.${namespace}.svc.cluster.local -file zk-${instanceidx}.cer -keystore truststore.jks -storepass $PASS -keypass $PASS  -noprompt
 done
 
 printf "" > keystores.base64.secret.yaml
