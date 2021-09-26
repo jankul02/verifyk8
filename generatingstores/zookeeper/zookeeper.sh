@@ -2,7 +2,7 @@
 
 set -eux
 
-namespace=${namespace:-"default"}
+namespace=${namespace:-"kafka"}
 
 if [ x${1:-""} != x ]
 then
@@ -14,21 +14,18 @@ echo PASS standard
 fi
 echo OK
 
-rm -f keystore.jks
-rm -f truststore.jks
-rm -f keystore.jks.*
-rm -f zk-*.cer
+
 
 for ((instanceidx=0;instanceidx<8;instanceidx++))
 do
 
-keytool -genkeypair -alias zk-${instanceidx} -keyalg RSA -keysize 2048 -dname "cn=zk-${instanceidx}" -keypass $PASS -keystore keystore.jks.${instanceidx} -storepass $PASS
-keytool -exportcert -alias zk-${instanceidx} -keystore keystore.jks.${instanceidx} -file zk-${instanceidx}.cer -rfc -storepass $PASS -keypass $PASS
+keytool -genkeypair -alias zk-${instanceidx}.zk-hs.default.svc.cluster.local -keyalg RSA -keysize 2048 -dname "cn=zk-${instanceidx}.zk-hs.default.svc.cluster.local" -keypass $PASS -keystore keystore.jks.${instanceidx} -storepass $PASS
+keytool -exportcert -alias zk-${instanceidx}.zk-hs.default.svc.cluster.local -keystore keystore.jks.${instanceidx} -file zk-${instanceidx}.cer -rfc -storepass $PASS -keypass $PASS
 done
 
 for ((instanceidx=0;instanceidx<8;instanceidx++))
 do
-keytool -importcert -alias zk-${instanceidx} -file zk-${instanceidx}.cer -keystore truststore.jks -storepass $PASS -keypass $PASS  -noprompt
+keytool -importcert -alias zk-${instanceidx}.zk-hs.default.svc.cluster.local -file zk-${instanceidx}.cer -keystore truststore.jks -storepass $PASS -keypass $PASS  -noprompt
 done
 
 printf "" > keystores.base64.secret.yaml
@@ -61,3 +58,7 @@ EOFKEYSTORE
 
 done
 
+rm -f keystore.jks
+rm -f truststore.jks
+rm -f keystore.jks.*
+rm -f zk-*.cer

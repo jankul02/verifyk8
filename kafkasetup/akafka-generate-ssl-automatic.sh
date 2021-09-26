@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-
-
 set -eux
 
-namespace=${namespace:-"default"}
+namespace=${namespace:-"kafka"}
 
 if [ x${1:-""} != x ]
 then
@@ -101,7 +99,7 @@ echo "############        generating keystores  ###################"
 echo "#############################################################"
 KEYSTORE_FILENAME="keystore.jks"
 
-instances="zk-0 zk-1 zk-2 kafka-0 kafka-1 kafka-2 kafka-client-0 zk-client-0"
+instances="kafka-0 kafka-1 kafka-2"
 printf "" > keystores.base64.secret.yaml
 for hostname in $instances
 do
@@ -125,7 +123,7 @@ echo "           the FQDN. Some operating systems call the CN prompt 'first / la
 
 
 keytool -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME -alias localhost -keyalg RSA -validity $VALIDITY_IN_DAYS \
- -genkey -keypass $PASS -storepass $PASS -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}.zk-hs.default.svc.cluster.local"  -ext SAN=DNS:${hostname}
+ -genkey -keypass $PASS -storepass $PASS -dname "C=$COUNTRY, ST=$STATE, L=$LOCATION, O=$OU, CN=${hostname}.kafka.default.svc.cluster.local"  -ext SAN=DNS:${hostname}
 
 # keytool -storetype JKS  -keystore $KEYSTORE_WORKING_DIRECTORY/$KEYSTORE_FILENAME \
 #   -alias localhost -validity $VALIDITY_IN_DAYS -genkey -keyalg RSA \
